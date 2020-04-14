@@ -1,2 +1,2 @@
 # ConnectedFactories
-AD Smart Imdustry - Connected Factories
+AD Smart Industry - Connected Factories
