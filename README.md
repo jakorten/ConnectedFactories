@@ -1,2 +1,3 @@
 # ConnectedFactories
-AD Smart Industry - Connected Factories
+
+HAN Associate Degree Smart Industry - Connected Factories
