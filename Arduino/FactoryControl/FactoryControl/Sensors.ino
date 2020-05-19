@@ -7,6 +7,10 @@ void checkTouchSensor() {
     char payLoadSensorState[1];
     itoa(sensorStateTouched, payLoadSensorState, 10);
     client.publish(pubSensorTopic, payLoadSensorState);
+    Serial.print("Updated topic ");
+    Serial.print(pubSensorTopic);
+    Serial.print(" with payload ");
+    Serial.println(payLoadSensorState);
 
     sensorStateTouched = false;
   }
