@@ -15,7 +15,6 @@
 
   modified for the HAN Smart Industry AD by J.A. Korten
   April 2, 2020
- 
   
 */
 
