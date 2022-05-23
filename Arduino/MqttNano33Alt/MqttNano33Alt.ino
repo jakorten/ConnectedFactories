@@ -1,12 +1,14 @@
 /* Based on examples by: Frenoy Osburn
- *  Aangepast door J.A. Korten voor AD Smart Industry
- *  April 13, 2021
- *  
- *  Version for use with hivemq
- */
+    Aangepast door J.A. Korten voor AD Smart Industry
+    April 13, 2021
 
-#include <WiFiNINA.h> 
+    Version for use with hivemq
+*/
+
+#include <WiFiNINA.h>
 #include <PubSubClient.h>
+#include <Arduino_LSM6DS3.h>
+
 #include "credentials.h"
 
 #define LED_PIN   13
@@ -27,10 +29,10 @@ char msg[50];
 int value = 0;
 int ledState = 0;
 
-void setup_wifi() 
+void setup_wifi()
 {
   delay(1500);
-  
+
   // We start by connecting to a WiFi network
   Serial.println();
   Serial.print("Connecting to ");
@@ -38,7 +40,7 @@ void setup_wifi()
 
   WiFi.begin(ssid, password);
 
-  while (WiFi.status() != WL_CONNECTED) 
+  while (WiFi.status() != WL_CONNECTED)
   {
     delay(500);
     Serial.print(".");
@@ -52,29 +54,51 @@ void setup_wifi()
   Serial.println(WiFi.localIP());
 }
 
-void callback(char* topic, byte* payload, unsigned int length) 
+void readSensor() {
+  float x, y, z;
+  
+  if (IMU.accelerationAvailable()) {
+    IMU.readAcceleration(x, y, z);
+    if (x > 50) {
+      sendMovement(x);
+    }
+    Serial.print(x);
+    Serial.print('\t');
+    Serial.print(y);
+    Serial.print('\t');
+    Serial.println(z);
+  }
+}
+
+void sendMovement(int movement) {
+  char payLoad[1];
+  itoa(movement, payLoad, 10);
+  client.publish(pubTopic, payLoad);
+}
+
+void callback(char* topic, byte* payload, unsigned int length)
 {
   Serial.print("Message arrived [");
   Serial.print(topic);
   Serial.print("] ");
-  for (int i = 0; i < length; i++) 
+  for (int i = 0; i < length; i++)
   {
     Serial.print((char)payload[i]);
   }
   Serial.println();
 
   // Switch on the LED if 1 was received as first character
-  if ((char)payload[0] == '1') 
+  if ((char)payload[0] == '1')
   {
-    digitalWrite(LED_PIN, HIGH);   
+    digitalWrite(LED_PIN, HIGH);
     ledState = 1;
     char payLoad[1];
     itoa(ledState, payLoad, 10);
     client.publish(pubTopic, payLoad);
-  } 
-  else 
+  }
+  else
   {
-    digitalWrite(LED_PIN, LOW); 
+    digitalWrite(LED_PIN, LOW);
     ledState = 0;
     char payLoad[1];
     itoa(ledState, payLoad, 10);
@@ -83,22 +107,22 @@ void callback(char* topic, byte* payload, unsigned int length)
 
 }
 
-void reconnect() 
+void reconnect()
 {
   // Loop until we're reconnected
-  while (!client.connected()) 
+  while (!client.connected())
   {
     Serial.print("Attempting MQTT connection...");
     // Create a random client ID
     String clientId = "ArduinoClient-";
     clientId += String(random(0xffff), HEX);
     // Attempt to connect
-    if (client.connect(clientId.c_str(), mqttUsername, mqttPassword)) 
+    if (client.connect(clientId.c_str(), mqttUsername, mqttPassword))
     {
       Serial.println("connected");
       // ... and resubscribe
       client.subscribe(subTopic);
-    } else 
+    } else
     {
       Serial.print("failed, rc=");
       Serial.print(client.state());
@@ -109,29 +133,30 @@ void reconnect()
   }
 }
 
-void setup() 
+void setup()
 {
-  pinMode(LED_PIN, OUTPUT);     
+  pinMode(LED_PIN, OUTPUT);
   Serial.begin(115200);
   setup_wifi();
   client.setServer(mqttServer, 1883);
   client.setCallback(callback);
 }
 
-void loop() 
+void loop()
 {
-  if (!client.connected()) 
+  if (!client.connected())
   {
     reconnect();
   }
   client.loop();
 
   long now = millis();
-  if (now - lastMsg > 5000) 
+  if (now - lastMsg > 5000)
   {
     lastMsg = now;
     char payLoad[1];
     itoa(ledState, payLoad, 10);
     client.publish(pubTopic, payLoad);
   }
+  readSensor();
 }
